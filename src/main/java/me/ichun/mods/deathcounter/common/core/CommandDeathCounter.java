@@ -35,25 +35,29 @@ public class CommandDeathCounter extends CommandBase {
 	
 	@Override
 	public void execute(MinecraftServer server, ICommandSender commandSender, String[] args) throws CommandException {
-		if (args.length > 0) {
-			if ("leaderboard".toLowerCase().startsWith(args[0])) {
-				if (args.length >= 2) {
-					if (args[1].equalsIgnoreCase("all")) broadcastLeaderboard(null);
-					else broadcastLeaderboard(args[1]);
-				} else broadcastLeaderboard(commandSender.getName());
-			} else if ("reset".toLowerCase().startsWith(args[0])) {
-				if (args.length >= 2) {
-					if (args[1].equalsIgnoreCase("all")) {
-						notifyCommandListener(commandSender, this, "dc.command.resetAll");
-						DeathCounter.console(commandSender.getName() + ": Resetting deaths for all players", Level.INFO);
-					} else {
-						if (DeathCounter.instance.clearDeath(args[1])) {
-							notifyCommandListener(commandSender, this, "dc.command.resetPlayer");
-							DeathCounter.console(commandSender.getName() + ": Resetting deaths for " + args[1], Level.INFO);
-						} else commandSender.sendMessage(new TextComponentTranslation("dc.command.noDeathsPlayer", args[1]));
-					}
-				} else throw new WrongUsageException("/" + this.getName() + " reset [all/user]");
-			} else throw new WrongUsageException("/" + this.getName() + " (leaderboard/reset) [all/user]");
+		if (args.length < 1) throw new WrongUsageException("/" + this.getName() + " (leaderboard/reset) [all/user]");
+		
+		if ("leaderboard".toLowerCase().startsWith(args[0])) {
+			
+			if (args.length >= 2) {
+				if (args[1].equalsIgnoreCase("all")) broadcastLeaderboard(null);
+				else broadcastLeaderboard(args[1]);
+			} else broadcastLeaderboard(commandSender.getName());
+			
+		} else if ("reset".toLowerCase().startsWith(args[0])) {
+			
+			if (args.length < 2) throw new WrongUsageException("/" + this.getName() + " reset [all/user]");
+			
+			if (args[1].equalsIgnoreCase("all")) {
+				notifyCommandListener(commandSender, this, "dc.command.resetAll");
+				DeathCounter.console(commandSender.getName() + ": Resetting deaths for all players", Level.INFO);
+			} else {
+				if (DeathCounter.instance.clearDeath(args[1])) {
+					notifyCommandListener(commandSender, this, "dc.command.resetPlayer");
+					DeathCounter.console(commandSender.getName() + ": Resetting deaths for " + args[1], Level.INFO);
+				} else commandSender.sendMessage(new TextComponentTranslation("dc.command.noDeathsPlayer", args[1]));
+			}
+			
 		} else throw new WrongUsageException("/" + this.getName() + " (leaderboard/reset) [all/user]");
 	}
 	

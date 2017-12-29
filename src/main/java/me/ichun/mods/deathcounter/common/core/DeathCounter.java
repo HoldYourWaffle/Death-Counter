@@ -38,26 +38,37 @@ public class DeathCounter {
 	public static File saveDir;
 	
 	public static HashMap<String, Integer> deathCounter = new HashMap<>();
-	
 	public static ArrayList<String> ranking = new ArrayList<>();
 	
-	public static int message;
+	public static MESSAGE_TYPE messageType;
 	public static int leaderboardCount;
-	public static int outputToTextFile;
-	public static int singleSession;
+	public static boolean save;
 	
 	@Instance("deathcounter")
 	public static DeathCounter instance;
+	
+	public enum MESSAGE_TYPE { NONE, SHORT, LONG }
 	
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		Configuration config = new Configuration(event.getSuggestedConfigurationFile());
 		config.load();
 		
-		message = config.getInt("message", "deathcounter", 2, 0, 2, "Death Count Messages?\n0 = Disable\n1 = Short message\n2 = Long message");
+		switch(config.getInt("message", "deathcounter", 2, 0, 2, "Death Count Messages?\n0 = Disable\n1 = Short message\n2 = Long message")) {
+			case 1:
+				messageType = MESSAGE_TYPE.SHORT;
+				break;
+			case 2:
+			default:
+				messageType = MESSAGE_TYPE.LONG;
+				break;
+			case 0:
+				messageType = MESSAGE_TYPE.NONE;
+				break;
+		}
+		
 		leaderboardCount = config.getInt("leaderboardCount", "deathcounter", 5, 0, 20, "Number of names to show in the leaderboards");
-		singleSession = config.getInt("singleSession", "deathcounter", 0, 0, 1, "Do not save deaths in save folder?\n0 = No\n1 = Yes");
-		outputToTextFile = config.getInt("outputToTextFile", "deathcounter", 1, 0, 1, "Output deaths to text file in save folder?\n(This is overridden to 0 by the singleSession config)\n0 = No\n1 = Yes");
+		save = config.getBoolean("singleSession", "deatchcounter", true, "Save deaths in the save folder? If false, your leaderboard is reset everytime deathcounter reloads");
 		
 		if (config.hasChanged()) config.save();
 		MinecraftForge.EVENT_BUS.register(this);
@@ -66,10 +77,7 @@ public class DeathCounter {
 	@EventHandler
 	public void serverStarting(FMLServerStartingEvent event) {
 		ICommandManager manager = event.getServer().getCommandManager();
-		if (manager instanceof CommandHandler) {
-			CommandHandler handler = (CommandHandler) manager;
-			handler.registerCommand(new CommandDeathCounter());
-		}
+		if (manager instanceof CommandHandler) ((CommandHandler) manager).registerCommand(new CommandDeathCounter());
 	}
 	
 	@EventHandler
@@ -116,7 +124,7 @@ public class DeathCounter {
 			}
 		}
 		
-		if (singleSession != 1 && outputToTextFile == 1) {
+		if (save) {
 			Properties s = new Properties();
 			File text = new File(saveDir, "deaths.txt");
 			
@@ -202,13 +210,17 @@ public class DeathCounter {
 				&& FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUsername(event.getEntityLiving().getName()) != null) {
 			EntityPlayer player = (EntityPlayer) event.getEntityLiving();
 			addDeath(player);
-			if (message > 0) {
-				if (message == 1) player.sendStatusMessage(new TextComponentTranslation("dc.message.deathAndRank", getDeathCount(player.getName()), getDisplayedRank(player.getName())), false);
-				
-				if (message == 2) {
+			
+			switch (messageType) {
+				case LONG:
 					player.sendStatusMessage(new TextComponentTranslation("dc.message.death", getDeathCount(player.getName())), false);
 					player.sendStatusMessage(new TextComponentTranslation("dc.message.rank", getDisplayedRank(player.getName())), false);
-				}
+					break;
+				case SHORT:
+					player.sendStatusMessage(new TextComponentTranslation("dc.message.deathAndRank", getDeathCount(player.getName()), getDisplayedRank(player.getName())), false);
+					break;
+				case NONE: break;
+				default: throw new RuntimeException("Mod creator forgot to add a case for '"+messageType+"' in his switch");
 			}
 		}
 	}
