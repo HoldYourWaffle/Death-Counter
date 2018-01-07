@@ -14,7 +14,7 @@ compileJava {
     sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-version = "1.12.2-1.0.0"
+version = "1.12.2-1.0.1"
 group= "deathcounter"
 archivesBaseName = "DeathCounter"
 
